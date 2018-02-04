@@ -1,0 +1,11 @@
+.partner2 {
+
+  background-image: url(../images/vas1.png);
+
+
+}
+
+.partner2:hover {
+  background-image: url(../images/vas.png);
+
+}

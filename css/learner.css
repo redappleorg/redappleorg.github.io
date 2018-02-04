@@ -1,0 +1,94 @@
+body {
+  padding: 0;
+  margin: 0;
+  font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+}
+
+vashi ul {
+	list-style-type: none;
+  padding: 1em;
+  margin: 0;
+  width: 8em;
+  float: left;
+	border-right: 1px dotted grey;
+	height: 20em;
+	margin-top: 2em;
+}
+
+h1 {
+	font-family: Verdana, Geneva, sans-serif;
+}
+
+vashi ul li {
+  margin: 0.5em 0;
+  padding: 0.3em;
+  background: black;
+  color: white;
+  text-align:right;
+}
+
+vashi li a { text-decoration: none; }
+vashi li a:link {color:white;}      /* unvisited link */
+vashi li a:visited {color:white;}  /* visited link */
+vashi li a:hover {color:#FF0000;}  /* mouse over link */
+vashi li a:active {color:#0000FF;}  /* selected link */
+
+vashi li.current {
+	width: 16em;
+	text-align:left;
+}
+
+vashi li.current a {
+	margin-left: 9em;
+	font-weight: bold;
+}
+
+div.content {
+	float: left;
+	margin: 0;
+	padding: 0;
+	margin-left: 9em;
+	margin-top: 1.8em;
+  max-width: 70%;
+}
+
+div.content div {
+  padding: 20px;
+}
+
+#page3 {
+  background-color: #e0ebeb;
+}
+
+footer {
+	clear: both;
+  font-style: italic;
+  color: grey;
+}
+
+/* rules for smaller screens: */
+@media only screen and (max-width: 800px) {
+    /* rules that only apply for screens narrower than 800px */
+    vashi ul {
+      clear: both; /* clear space around (left and right side), this pushes other elements downward */
+      padding: 0.5em;
+      margin: 0;
+      height: 10em;
+    }
+    div.content a {
+      font-size:150%;
+      padding: 0.5em;
+    }
+    h1 {
+      margin-top:0;
+    }
+    vashi li a:hover {color:white;}  /* mouse over link */
+    div.content {
+      margin: 0;
+      padding: 0;
+      clear: both;
+    }
+    footer {
+      margin: 0.5em;
+    }
+} /* /@media */
