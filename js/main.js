@@ -288,8 +288,57 @@
 		ssAOS();
 		ssAjaxChimp();
 		ssBackToTop();
+		ssBricksAnimate();
+		ssFlexSlider();
 
 	})();
 
 
 })(jQuery);
+
+
+/* Flex Slider
+ * ------------------------------------------------------ */
+ var ssFlexSlider = function() {
+
+	 $WIN.on('load', function() {
+
+			$('#featured-post-slider').flexslider({
+			 namespace: "flex-",
+				 controlsContainer: "", // ".flex-content",
+				 animation: 'fade',
+				 controlNav: false,
+				 directionNav: true,
+				 smoothHeight: false,
+				 slideshowSpeed: 7000,
+				 animationSpeed: 600,
+				 randomize: false,
+				 touch: true,
+			});
+
+			$('.post-slider').flexslider({
+			 namespace: "flex-",
+				 controlsContainer: "",
+				 animation: 'fade',
+				 controlNav: true,
+				 directionNav: false,
+				 smoothHeight: false,
+				 slideshowSpeed: 7000,
+				 animationSpeed: 600,
+				 randomize: false,
+				 touch: true,
+				 start: function (slider) {
+				 if (typeof slider.container === 'object') {
+					 slider.container.on("click", function (e) {
+						 if (!slider.animating) {
+							 slider.flexAnimate(slider.getTarget('next'));
+						 }
+					 });
+				 }
+
+				 $('.bricks-wrapper').masonry('layout');
+			 }
+			});
+
+		});
+ };
