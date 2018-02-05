@@ -26,15 +26,15 @@ if (!defined('TESTSUITE')) {
 }
 
 // But this one is needed for Sanitize::escapeJsString()
-use PMA\libraries\Sanitize;
+use PhpMyAdmin\Sanitize;
 
 
-$buffer = PMA\libraries\OutputBuffering::getInstance();
+$buffer = PhpMyAdmin\OutputBuffering::getInstance();
 $buffer->start();
 if (!defined('TESTSUITE')) {
     register_shutdown_function(
         function () {
-            echo PMA\libraries\OutputBuffering::getInstance()->getContents();
+            echo PhpMyAdmin\OutputBuffering::getInstance()->getContents();
         }
     );
 }
@@ -124,9 +124,6 @@ $js_messages['strCreateSingleColumnIndex'] = __('Create single-column index');
 $js_messages['strCreateCompositeIndex'] = __('Create composite index');
 $js_messages['strCompositeWith'] = __('Composite with:');
 $js_messages['strMissingColumn'] = __('Please select column(s) for the index.');
-
-/* For Create Table */
-$js_messages['strLeastColumnError'] = __('You have to add at least one column.');
 
 /* For Preview SQL*/
 $js_messages['strPreviewSQL'] = __('Preview SQL');
@@ -370,6 +367,7 @@ $js_messages['strErrorConnection'] = __(
     'network connectivity and server status.'
 );
 $js_messages['strNoDatabasesSelected'] = __('No databases selected.');
+$js_messages['strNoAccountSelected'] = __('No accounts selected.');
 $js_messages['strDroppingColumn'] = __('Dropping column');
 $js_messages['strAddingPrimaryKey'] = __('Adding primary key');
 $js_messages['strOK'] = __('OK');
@@ -559,6 +557,7 @@ $js_messages['strLeavingDesigner'] = __(
     'You haven\'t saved the changes in the layout. They will be lost if you'
     . ' don\'t save them. Do you want to continue?'
 );
+$js_messages['strAddTables'] = __('Add tables from other databases');
 $js_messages['strPageName'] = __('Page name');
 $js_messages['strSavePage'] = __('Save page');
 $js_messages['strSavePageAs'] = __('Save page as');
@@ -698,10 +697,10 @@ $js_messages['phpErrorsFound'] = '<div class="error">'
     . '<div>'
     . '<input id="pma_ignore_errors_popup" type="submit" value="'
     . __('Ignore')
-    . '" class="floatright" style="margin-top: 20px;">'
+    . '" class="floatright message_errors_found">'
     . '<input id="pma_ignore_all_errors_popup" type="submit" value="'
     . __('Ignore All')
-    . '" class="floatright" style="margin-top: 20px;">'
+    . '" class="floatright message_errors_found">'
     . '</div></div>';
 
 $js_messages['phpErrorsBeingSubmitted'] = '<div class="error">'
@@ -713,7 +712,7 @@ $js_messages['phpErrorsBeingSubmitted'] = '<div class="error">'
     )
     . '<br/>'
     . '<img src="'
-    . ($_SESSION['PMA_Theme']->getImgPath('ajax_clock_small.gif'))
+    . ($GLOBALS['PMA_Theme']->getImgPath('ajax_clock_small.gif'))
     . '" width="16" height="16" alt="ajax clock"/>'
     . '</div>';
 
@@ -743,6 +742,10 @@ $js_messages['strWeak'] = __('Weak');
 $js_messages['strGood'] = __('Good');
 $js_messages['strStrong'] = __('Strong');
 
+/* U2F errors */
+$js_messages['strU2FTimeout'] = __('Timed out waiting for security key activation.');
+$js_messages['strU2FError'] = __('Failed security key activation (%s).');
+
 echo "var PMA_messages = new Array();\n";
 foreach ($js_messages as $name => $js_message) {
     Sanitize::printJsValue("PMA_messages['" . $name . "']", $js_message);
@@ -755,7 +758,7 @@ echo "var themeCalendarImage = '" , $GLOBALS['pmaThemeImage']
 /* Image path */
 echo "var pmaThemeImage = '" , $GLOBALS['pmaThemeImage'] , "';\n";
 
-echo "var mysql_doc_template = '" , PMA\libraries\Util::getMySQLDocuURL('%s')
+echo "var mysql_doc_template = '" , PhpMyAdmin\Util::getMySQLDocuURL('%s')
     , "';\n";
 
 //Max input vars allowed by PHP.

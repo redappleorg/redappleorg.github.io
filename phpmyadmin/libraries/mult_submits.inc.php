@@ -5,16 +5,16 @@
  *
  * @package PhpMyAdmin
  */
-use PMA\libraries\Message;
-use PMA\libraries\Response;
+
+use PhpMyAdmin\CentralColumns;
+use PhpMyAdmin\Message;
+use PhpMyAdmin\MultSubmits;
+use PhpMyAdmin\Response;
+use PhpMyAdmin\Sql;
 
 if (! defined('PHPMYADMIN')) {
     exit;
 }
-
-require_once 'libraries/transformations.lib.php';
-require_once 'libraries/sql.lib.php';
-require_once 'libraries/mult_submits.lib.php';
 
 $request_params = array(
     'clause_is_unique',
@@ -66,6 +66,7 @@ if (! empty($submit_mult)
         // coming from database structure view - do something with
         // selected tables
         $selected = $_POST['selected_tbl'];
+        $centralColumns = new CentralColumns($GLOBALS['dbi']);
         switch ($submit_mult) {
         case 'add_prefix_tbl':
         case 'replace_prefix_tbl':
@@ -91,43 +92,45 @@ if (! empty($submit_mult)
         case 'copy_tbl':
             $views = $GLOBALS['dbi']->getVirtualTables($db);
             list($full_query, $reload, $full_query_views)
-                = PMA_getQueryFromSelected(
+                = MultSubmits::getQueryFromSelected(
                     $submit_mult, $table, $selected, $views
                 );
-            $_url_params = PMA_getUrlParams(
+            $_url_params = MultSubmits::getUrlParams(
                 $submit_mult, $reload, $action, $db, $table, $selected, $views,
                 isset($original_sql_query)? $original_sql_query : null,
                 isset($original_url_query)? $original_url_query : null
             );
             $response->disable();
             $response->addHTML(
-                PMA_getHtmlForCopyMultipleTables($action, $_url_params)
+                MultSubmits::getHtmlForCopyMultipleTables($action, $_url_params)
             );
             exit;
         case 'show_create':
-            $show_create = PMA\libraries\Template::get(
+            $show_create = PhpMyAdmin\Template::get(
                 'database/structure/show_create'
             )
                 ->render(
                     array(
                         'db'         => $GLOBALS['db'],
                         'db_objects' => $selected,
+                        'dbi'        => $GLOBALS['dbi'],
                     )
                 );
             // Send response to client.
             $response->addJSON('message', $show_create);
             exit;
         case 'sync_unique_columns_central_list':
-            include_once 'libraries/central_columns.lib.php';
-            $centralColsError = PMA_syncUniqueColumns($selected);
+            $centralColsError = $centralColumns->syncUniqueColumns(
+                $selected
+            );
             break;
         case 'delete_unique_columns_central_list':
-            include_once 'libraries/central_columns.lib.php';
-            $centralColsError = PMA_deleteColumnsFromList($selected);
+            $centralColsError = $centralColumns->deleteColumnsFromList(
+                $selected
+            );
             break;
         case 'make_consistent_with_central_list':
-            include_once 'libraries/central_columns.lib.php';
-            $centralColsError = PMA_makeConsistentWithList(
+            $centralColsError = $centralColumns->makeConsistentWithList(
                 $GLOBALS['db'],
                 $selected
             );
@@ -161,7 +164,6 @@ if (!empty($submit_mult) && !empty($what)) {
     if (strlen($table) > 0) {
         include './libraries/tbl_common.inc.php';
         $url_query .= '&amp;goto=tbl_sql.php&amp;back=tbl_sql.php';
-        include './libraries/tbl_info.inc.php';
     } elseif (strlen($db) > 0) {
         include './libraries/db_common.inc.php';
 
@@ -175,7 +177,7 @@ if (!empty($submit_mult) && !empty($what)) {
             $tooltip_truename,
             $tooltip_aliasname,
             $pos
-        ) = PMA\libraries\Util::getDbInfo($db, isset($sub_part) ? $sub_part : '');
+        ) = PhpMyAdmin\Util::getDbInfo($db, isset($sub_part) ? $sub_part : '');
 
     } else {
         include_once './libraries/server_common.inc.php';
@@ -183,12 +185,12 @@ if (!empty($submit_mult) && !empty($what)) {
 
     // Builds the query
     list($full_query, $reload, $full_query_views)
-        = PMA_getQueryFromSelected(
+        = MultSubmits::getQueryFromSelected(
             $what, $table, $selected, $views
         );
 
     // Displays the confirmation form
-    $_url_params = PMA_getUrlParams(
+    $_url_params = MultSubmits::getUrlParams(
         $what, $reload, $action, $db, $table, $selected, $views,
         isset($original_sql_query)? $original_sql_query : null,
         isset($original_url_query)? $original_url_query : null
@@ -198,14 +200,14 @@ if (!empty($submit_mult) && !empty($what)) {
     if ($what == 'replace_prefix_tbl' || $what == 'copy_tbl_change_prefix') {
         $response->disable();
         $response->addHTML(
-            PMA_getHtmlForReplacePrefixTable($action, $_url_params)
+            MultSubmits::getHtmlForReplacePrefixTable($action, $_url_params)
         );
     } elseif ($what == 'add_prefix_tbl') {
         $response->disable();
-        $response->addHTML(PMA_getHtmlForAddPrefixTable($action, $_url_params));
+        $response->addHTML(MultSubmits::getHtmlForAddPrefixTable($action, $_url_params));
     } else {
         $response->addHTML(
-            PMA_getHtmlForOtherActions($what, $action, $_url_params, $full_query)
+            MultSubmits::getHtmlForOtherActions($what, $action, $_url_params, $full_query)
         );
     }
     exit;
@@ -214,18 +216,11 @@ if (!empty($submit_mult) && !empty($what)) {
     /**
      * Executes the query - dropping rows, columns/fields, tables or dbs
      */
-    if ($query_type == 'drop_db'
-        || $query_type == 'drop_tbl'
-        || $query_type == 'drop_fld'
-    ) {
-        include_once './libraries/relation_cleanup.lib.php';
-    }
-
     if ($query_type == 'primary_fld') {
         // Gets table primary key
         $GLOBALS['dbi']->selectDb($db);
         $result = $GLOBALS['dbi']->query(
-            'SHOW KEYS FROM ' . PMA\libraries\Util::backquote($table) . ';'
+            'SHOW KEYS FROM ' . PhpMyAdmin\Util::backquote($table) . ';'
         );
         $primary = '';
         while ($row = $GLOBALS['dbi']->fetchAssoc($result)) {
@@ -241,13 +236,13 @@ if (!empty($submit_mult) && !empty($what)) {
         || $query_type == 'empty_tbl'
         || $query_type == 'row_delete'
     ) {
-        $default_fk_check_value = PMA\libraries\Util::handleDisableFKCheckInit();
+        $default_fk_check_value = PhpMyAdmin\Util::handleDisableFKCheckInit();
     }
 
     list(
         $result, $rebuild_database_list, $reload_ret,
         $run_parts, $execute_query_later, $sql_query, $sql_query_views
-    ) = PMA_buildOrExecuteQueryForMulti(
+    ) = MultSubmits::buildOrExecuteQueryForMulti(
         $query_type, $selected, $db, $table, $views,
         isset($primary) ? $primary : null,
         isset($from_prefix) ? $from_prefix : null,
@@ -268,7 +263,7 @@ if (!empty($submit_mult) && !empty($what)) {
     }
 
     if ($execute_query_later) {
-        PMA_executeQueryAndSendQueryResponse(
+        Sql::executeQueryAndSendQueryResponse(
             null, // analyzed_sql_results
             false, // is_gotofile
             $db, // db
@@ -305,7 +300,7 @@ if (!empty($submit_mult) && !empty($what)) {
         || $query_type == 'empty_tbl'
         || $query_type == 'row_delete'
     ) {
-        PMA\libraries\Util::handleDisableFKCheckCleanup($default_fk_check_value);
+        PhpMyAdmin\Util::handleDisableFKCheckCleanup($default_fk_check_value);
     }
     if ($rebuild_database_list) {
         // avoid a problem with the database list navigator

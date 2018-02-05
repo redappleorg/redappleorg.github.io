@@ -5,26 +5,45 @@
  *
  * @package PhpMyAdmin-Designer
  */
-use PMA\libraries\Response;
+use PhpMyAdmin\Database\Designer;
+use PhpMyAdmin\PmdCommon;
+use PhpMyAdmin\Response;
 
 require_once 'libraries/common.inc.php';
-require_once 'libraries/pmd_common.php';
-require_once 'libraries/db_designer.lib.php';
 
 $response = Response::getInstance();
 
 if (isset($_REQUEST['dialog'])) {
 
     if ($_REQUEST['dialog'] == 'edit') {
-        $html = PMA_getHtmlForEditOrDeletePages($GLOBALS['db'], 'editPage');
-    } else if ($_REQUEST['dialog'] == 'delete') {
-        $html = PMA_getHtmlForEditOrDeletePages($GLOBALS['db'], 'deletePage');
-    } else if ($_REQUEST['dialog'] == 'save_as') {
-        $html = PMA_getHtmlForPageSaveAs($GLOBALS['db']);
-    } else if ($_REQUEST['dialog'] == 'export') {
-        include_once 'libraries/plugin_interface.lib.php';
-        $html = PMA_getHtmlForSchemaExport(
+        $html = Designer::getHtmlForEditOrDeletePages($GLOBALS['db'], 'editPage');
+    } elseif ($_REQUEST['dialog'] == 'delete') {
+        $html = Designer::getHtmlForEditOrDeletePages($GLOBALS['db'], 'deletePage');
+    } elseif ($_REQUEST['dialog'] == 'save_as') {
+        $html = Designer::getHtmlForPageSaveAs($GLOBALS['db']);
+    } elseif ($_REQUEST['dialog'] == 'export') {
+        $html = Designer::getHtmlForSchemaExport(
             $GLOBALS['db'], $_REQUEST['selected_page']
+        );
+    } elseif ($_REQUEST['dialog'] == 'add_table') {
+        $script_display_field = PmdCommon::getTablesInfo();
+        $required = $GLOBALS['db'] . '.' . $GLOBALS['table'];
+        $tab_column = PmdCommon::getColumnsInfo();
+        $tables_all_keys = PmdCommon::getAllKeys();
+        $tables_pk_or_unique_keys = PmdCommon::getPkOrUniqueKeys();
+
+        $req_key = array_search($required, $GLOBALS['PMD']['TABLE_NAME']);
+
+        $GLOBALS['PMD']['TABLE_NAME'] = array($GLOBALS['PMD']['TABLE_NAME'][$req_key]);
+        $GLOBALS['PMD_URL']['TABLE_NAME_SMALL'] = array($GLOBALS['PMD_URL']['TABLE_NAME_SMALL'][$req_key]);
+        $GLOBALS['PMD']['TABLE_NAME_SMALL'] = array($GLOBALS['PMD']['TABLE_NAME_SMALL'][$req_key]);
+        $GLOBALS['PMD_OUT']['TABLE_NAME_SMALL'] = array($GLOBALS['PMD_OUT']['TABLE_NAME_SMALL'][$req_key]);
+        $GLOBALS['PMD']['TABLE_TYPE'] = array($GLOBALS['PMD_URL']['TABLE_TYPE'][$req_key]);
+        $GLOBALS['PMD_OUT']['OWNER'] = array($GLOBALS['PMD_OUT']['OWNER'][$req_key]);
+
+        $html = Designer::getDatabaseTables(
+            array(), -1, $tab_column,
+            $tables_all_keys, $tables_pk_or_unique_keys
         );
     }
 
@@ -37,36 +56,38 @@ if (isset($_REQUEST['dialog'])) {
 if (isset($_REQUEST['operation'])) {
 
     if ($_REQUEST['operation'] == 'deletePage') {
-        $success = PMA_deletePage($_REQUEST['selected_page']);
+        $success = PmdCommon::deletePage($_REQUEST['selected_page']);
         $response->setRequestStatus($success);
     } elseif ($_REQUEST['operation'] == 'savePage') {
         if ($_REQUEST['save_page'] == 'same') {
             $page = $_REQUEST['selected_page'];
         } else { // new
-            $page = PMA_createNewPage($_REQUEST['selected_value'], $GLOBALS['db']);
+            $page = PmdCommon::createNewPage($_REQUEST['selected_value'], $GLOBALS['db']);
             $response->addJSON('id', $page);
         }
-        $success = PMA_saveTablePositions($page);
+        $success = PmdCommon::saveTablePositions($page);
         $response->setRequestStatus($success);
     } elseif ($_REQUEST['operation'] == 'setDisplayField') {
-        PMA_saveDisplayField(
+        PmdCommon::saveDisplayField(
             $_REQUEST['db'], $_REQUEST['table'], $_REQUEST['field']
         );
         $response->setRequestStatus(true);
     } elseif ($_REQUEST['operation'] == 'addNewRelation') {
-        list($success, $message) = PMA_addNewRelation(
+        list($success, $message) = PmdCommon::addNewRelation(
             $_REQUEST['db'],
             $_REQUEST['T1'],
             $_REQUEST['F1'],
             $_REQUEST['T2'],
             $_REQUEST['F2'],
             $_REQUEST['on_delete'],
-            $_REQUEST['on_update']
+            $_REQUEST['on_update'],
+            $_REQUEST['DB1'],
+            $_REQUEST['DB2']
         );
         $response->setRequestStatus($success);
         $response->addJSON('message', $message);
     } elseif ($_REQUEST['operation'] == 'removeRelation') {
-        list($success, $message) = PMA_removeRelation(
+        list($success, $message) = PmdCommon::removeRelation(
             $_REQUEST['T1'],
             $_REQUEST['F1'],
             $_REQUEST['T2'],
@@ -75,7 +96,7 @@ if (isset($_REQUEST['operation'])) {
         $response->setRequestStatus($success);
         $response->addJSON('message', $message);
     } elseif ($_REQUEST['operation'] == 'save_setting_value') {
-        $success = PMA_saveDesignerSetting($_REQUEST['index'], $_REQUEST['value']);
+        $success = PmdCommon::saveDesignerSetting($_REQUEST['index'], $_REQUEST['value']);
         $response->setRequestStatus($success);
     }
 
@@ -84,30 +105,30 @@ if (isset($_REQUEST['operation'])) {
 
 require 'libraries/db_common.inc.php';
 
-$script_display_field = PMA_getTablesInfo();
-$tab_column = PMA_getColumnsInfo();
-$script_tables = PMA_getScriptTabs();
-$tables_pk_or_unique_keys = PMA_getPKOrUniqueKeys();
-$tables_all_keys = PMA_getAllKeys();
-$classes_side_menu = PMA_returnClassNamesFromMenuButtons();
+$script_display_field = PmdCommon::getTablesInfo();
+$tab_column = PmdCommon::getColumnsInfo();
+$script_tables = PmdCommon::getScriptTabs();
+$tables_pk_or_unique_keys = PmdCommon::getPkOrUniqueKeys();
+$tables_all_keys = PmdCommon::getAllKeys();
+$classes_side_menu = Designer::returnClassNamesFromMenuButtons();
 
 $display_page = -1;
 $selected_page = null;
 
 if (isset($_REQUEST['query'])) {
-    $display_page = PMA_getDefaultPage($_REQUEST['db']);
+    $display_page = PmdCommon::getDefaultPage($_REQUEST['db']);
 } else {
     if (! empty($_REQUEST['page'])) {
         $display_page = $_REQUEST['page'];
     } else {
-        $display_page = PMA_getLoadingPage($_REQUEST['db']);
+        $display_page = PmdCommon::getLoadingPage($_REQUEST['db']);
     }
 }
 if ($display_page != -1) {
-    $selected_page = PMA_getPageName($display_page);
+    $selected_page = PmdCommon::getPageName($display_page);
 }
-$tab_pos = PMA_getTablePositions($display_page);
-$script_contr = PMA_getScriptContr();
+$tab_pos = PmdCommon::getTablePositions($display_page);
+$script_contr = PmdCommon::getScriptContr();
 
 $params = array('lang' => $GLOBALS['lang']);
 if (isset($_GET['db'])) {
@@ -120,7 +141,7 @@ $header   = $response->getHeader();
 $header->setBodyId('pmd_body');
 
 $scripts  = $header->getScripts();
-$scripts->addFile('jquery/jquery.fullscreen.js');
+$scripts->addFile('vendor/jquery/jquery.fullscreen.js');
 $scripts->addFile('pmd/designer_db.js');
 $scripts->addFile('pmd/designer_objects.js');
 $scripts->addFile('pmd/designer_page.js');
@@ -138,17 +159,17 @@ list(
     $tooltip_truename,
     $tooltip_aliasname,
     $pos
-) = PMA\libraries\Util::getDbInfo($db, isset($sub_part) ? $sub_part : '');
+) = PhpMyAdmin\Util::getDbInfo($db, isset($sub_part) ? $sub_part : '');
 
 // Embed some data into HTML, later it will be read
 // by pmd/init.js and converted to JS variables.
 $response->addHTML(
-    PMA_getHtmlForJSFields(
+    Designer::getHtmlForJsFields(
         $script_tables, $script_contr, $script_display_field, $display_page
     )
 );
 $response->addHTML(
-    PMA_getDesignerPageMenu(
+    Designer::getPageMenu(
         isset($_REQUEST['query']),
         $selected_page,
         $classes_side_menu
@@ -162,11 +183,11 @@ $response->addHTML(
     '<form action="" id="container-form" method="post" name="form1">'
 );
 
-$response->addHTML(PMA_getHTMLCanvas());
-$response->addHTML(PMA_getHTMLTableList($tab_pos, $display_page));
+$response->addHTML(Designer::getHtmlCanvas());
+$response->addHTML(Designer::getHtmlTableList($tab_pos, $display_page));
 
 $response->addHTML(
-    PMA_getDatabaseTables(
+    Designer::getDatabaseTables(
         $tab_pos, $display_page, $tab_column,
         $tables_all_keys, $tables_pk_or_unique_keys
     )
@@ -176,16 +197,16 @@ $response->addHTML('</div>'); // end canvas_outer
 
 $response->addHTML('<div id="pmd_hint"></div>');
 
-$response->addHTML(PMA_getNewRelationPanel());
-$response->addHTML(PMA_getDeleteRelationPanel());
+$response->addHTML(Designer::getNewRelationPanel());
+$response->addHTML(Designer::getDeleteRelationPanel());
 
 if (isset($_REQUEST['query'])) {
-    $response->addHTML(PMA_getOptionsPanel());
-    $response->addHTML(PMA_getRenameToPanel());
-    $response->addHTML(PMA_getHavingQueryPanel());
-    $response->addHTML(PMA_getAggregateQueryPanel());
-    $response->addHTML(PMA_getWhereQueryPanel());
-    $response->addHTML(PMA_getQueryDetails());
+    $response->addHTML(Designer::getOptionsPanel());
+    $response->addHTML(Designer::getRenameToPanel());
+    $response->addHTML(Designer::getHavingQueryPanel());
+    $response->addHTML(Designer::getAggregateQueryPanel());
+    $response->addHTML(Designer::getWhereQueryPanel());
+    $response->addHTML(Designer::getQueryDetails($_GET['db']));
 }
 
 $response->addHTML('<div id="PMA_disable_floating_menubar"></div>');

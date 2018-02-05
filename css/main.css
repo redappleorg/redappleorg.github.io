@@ -17,6 +17,7 @@
  *  13. testimonials
  *  14. download
  *  15. footer styles
+ *  16. Blog bricks css
  *
  * =================================================================== */
 
@@ -2853,5 +2854,125 @@ footer ul a:visited {
   }
 }
 
+/* ===================================================================
+ *  12. bricks masonry - (_layout.scss)
+ *
+ * ------------------------------------------------------------------- */
+#bricks {
+	padding-top: 4.2rem;
+}
+
+#bricks .masonry {
+	max-width: 1440px;
+}
+
+#bricks .pagination {
+	margin-top: 6rem;
+}
+
+#bricks.with-top-sep {
+	position: relative;
+}
+
+#bricks.with-top-sep::before {
+	content: "";
+	display: block;
+	position: absolute;
+	left: 50%;
+	top: 0;
+	margin-left: -100px;
+	width: 200px;
+	height: 1px;
+	background-color: #D1D1D1;
+}
+
+.bricks-wrapper:before,
+.bricks-wrapper:after {
+	content: "";
+	display: table;
+}
+
+.bricks-wrapper:after {
+	clear: both;
+}
+
+.bricks-wrapper .grid-sizer,
+.bricks-wrapper .brick {
+	width: 25%;
+}
+
+.bricks-wrapper .brick {
+	float: left;
+	padding: 0 20px;
+}
+
+.bricks-wrapper .featured-grid {
+	width: 50%;
+}
+
+.bricks-wrapper .featured-grid .entry-content {
+	width: 100%;
+	background: #151515;
+}
+
+/* responsive:
+/* bricks masonry
+ * ------------------------------------------------------------------- */
+@media only screen and (max-width:1280px) {
+	.bricks-wrapper .grid-sizer,
+	.bricks-wrapper .brick {
+		width: 33.33333%;
+	}
+
+	.bricks-wrapper .featured-grid {
+		width: 66.66667%;
+	}
+}
+@media only screen and (max-width:1024px) {
+	.bricks-wrapper .brick {
+		padding: 0 18px;
+	}
+
+}
+@media only screen and (max-width:960px) {
+	.bricks-wrapper .grid-sizer,
+	.bricks-wrapper .brick {
+		width: 50%;
+	}
+
+	.bricks-wrapper .featured-grid {
+		width: 100%;
+	}
+}
+@media only screen and (max-width:768px) {
+	.bricks-wrapper .brick {
+		padding: 0 15px;
+	}
+
+}
+
+@media only screen and (max-width:600px) {
+	#bricks .row {
+		max-width: 460px;
+	}
+
+	.bricks-wrapper .grid-sizer,
+	.bricks-wrapper .brick {
+		width: 100%;
+		padding: 0 10px;
+		clear: both;
+	}
+}
+@media only screen and (max-width:400px) {
+	.bricks-wrapper .brick {
+		width: 100% !important;
+		float: none !important;
+		clear: both !important;
+		margin-left: 0;
+		margin-right: 0;
+		padding: 0;
+	}
+
+}
 
 /*# sourceMappingURL=main.css.map */
