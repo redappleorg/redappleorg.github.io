@@ -44,7 +44,7 @@ vashi li.current a {
 }
 
 div.content {
-	/*float: left;*/
+	float: left;
 	margin: 0;
 	padding: 0;
 	margin-left: 9em;
@@ -71,13 +71,13 @@ footer {
     /* rules that only apply for screens narrower than 800px */
     vashi ul {
       clear: both; /* clear space around (left and right side), this pushes other elements downward */
-      padding: 0.2em;
+      padding: 0.5em;
       margin: 0;
       height: 10em;
     }
     div.content a {
       font-size:150%;
-      padding: 0.2em;
+      padding: 0.5em;
     }
     h1 {
       margin-top:0;
